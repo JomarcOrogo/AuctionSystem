@@ -12,12 +12,22 @@ public class SellerGUI {
     private JButton addItemButton;
     private JButton startAuctionButton;
     private MutableAuctionSystemHolder auctionSystemHolder;
+    private String sellerName;
 
     public SellerGUI(MutableAuctionSystemHolder auctionSystemHolder) {
         this.auctionSystemHolder = auctionSystemHolder;
 
+        // Seller Login
+        sellerName = JOptionPane.showInputDialog(null, "Enter your name to log in as a seller:",
+                "Seller Login", JOptionPane.PLAIN_MESSAGE);
+
+        if (sellerName == null || sellerName.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Seller name is required. Exiting...");
+            System.exit(0);
+        }
+
         frame = new JFrame("Seller - Auction Management");
-        frame.setSize(600, 400);
+        frame.setSize(800, 400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(null);
 
@@ -25,10 +35,10 @@ public class SellerGUI {
         tableLabel.setBounds(20, 20, 200, 25);
         frame.add(tableLabel);
 
-        tableModel = new DefaultTableModel(new Object[]{"Item Name", "Starting Bid"}, 0);
+        tableModel = new DefaultTableModel(new Object[]{"Item Name", "Starting Bid", "Seller Name", "Status"}, 0);
         itemsTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(itemsTable);
-        scrollPane.setBounds(20, 50, 540, 150);
+        scrollPane.setBounds(20, 50, 740, 150);
         frame.add(scrollPane);
 
         JLabel itemNameLabel = new JLabel("Item Name:");
@@ -74,8 +84,8 @@ public class SellerGUI {
                     return;
                 }
 
-                // Add item to table
-                tableModel.addRow(new Object[]{itemName, startingBid});
+                // Add item to the table with the seller's name and "Still Up for Bid" status
+                tableModel.addRow(new Object[]{itemName, startingBid, sellerName, "Still Up for Bid"});
                 itemNameField.setText("");
                 startingBidField.setText("");
             }
@@ -97,7 +107,26 @@ public class SellerGUI {
                 AuctionSystem auctionSystem = new AuctionSystem(auctionItem, 60);
                 auctionSystemHolder.setAuctionSystem(auctionSystem);
 
+                // Start the auction
+                auctionSystem.startAuction();
                 JOptionPane.showMessageDialog(frame, "Auction for '" + itemName + "' has started.");
+
+                // Update the status of the selected item
+                tableModel.setValueAt("Still Up for Bid", selectedRow, 3);
+
+                // Start a timer to automatically update the status when the auction ends
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(auctionSystem.getAuctionDuration() * 1000L);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    }
+                    SwingUtilities.invokeLater(() -> {
+                        if (!auctionSystem.isAuctionRunning()) {
+                            tableModel.setValueAt("Sold", selectedRow, 3);
+                        }
+                    });
+                }).start();
             }
         });
 
