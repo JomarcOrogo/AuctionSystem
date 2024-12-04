@@ -11,23 +11,20 @@ public class SellerGUI {
     private JTextField startingBidField;
     private JButton addItemButton;
     private JButton startAuctionButton;
+    private JButton logoutButton;
     private MutableAuctionSystemHolder auctionSystemHolder;
     private String sellerName;
 
     public SellerGUI(MutableAuctionSystemHolder auctionSystemHolder) {
         this.auctionSystemHolder = auctionSystemHolder;
+        initializeGUI();
+    }
 
-        // Seller Login
-        sellerName = JOptionPane.showInputDialog(null, "Enter your name to log in as a seller:",
-                "Seller Login", JOptionPane.PLAIN_MESSAGE);
-
-        if (sellerName == null || sellerName.isEmpty()) {
-            JOptionPane.showMessageDialog(null, "Seller name is required. Exiting...");
-            System.exit(0);
-        }
+    private void initializeGUI() {
+        sellerLogin();
 
         frame = new JFrame("Seller - Auction Management");
-        frame.setSize(800, 400);
+        frame.setSize(800, 450);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(null);
 
@@ -65,6 +62,26 @@ public class SellerGUI {
         startAuctionButton.setBounds(350, 260, 150, 25);
         frame.add(startAuctionButton);
 
+        logoutButton = new JButton("Logout");
+        logoutButton.setBounds(550, 260, 150, 25);
+        frame.add(logoutButton);
+
+        addListeners();
+
+        frame.setVisible(true);
+    }
+
+    private void sellerLogin() {
+        sellerName = JOptionPane.showInputDialog(null, "Enter your name to log in as a seller:",
+                "Seller Login", JOptionPane.PLAIN_MESSAGE);
+
+        if (sellerName == null || sellerName.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Seller name is required. Exiting...");
+            System.exit(0);
+        }
+    }
+
+    private void addListeners() {
         addItemButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -130,6 +147,17 @@ public class SellerGUI {
             }
         });
 
-        frame.setVisible(true);
+        logoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int confirm = JOptionPane.showConfirmDialog(frame,
+                        "Are you sure you want to log out?", "Confirm Logout", JOptionPane.YES_NO_OPTION);
+
+                if (confirm == JOptionPane.YES_OPTION) {
+                    frame.dispose();
+                    new SellerGUI(auctionSystemHolder);
+                }
+            }
+        });
     }
 }
