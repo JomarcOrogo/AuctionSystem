@@ -9,8 +9,10 @@ public class SellerGUI {
     private DefaultTableModel tableModel;
     private JTextField itemNameField;
     private JTextField startingBidField;
+    private JTextField bidAmountField;
     private JButton addItemButton;
     private JButton startAuctionButton;
+    private JButton bidButton;
     private JButton logoutButton;
     private MutableAuctionSystemHolder auctionSystemHolder;
     private String sellerName;
@@ -24,7 +26,7 @@ public class SellerGUI {
         sellerLogin();
 
         frame = new JFrame("Seller - Auction Management");
-        frame.setSize(800, 450);
+        frame.setSize(800, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(null);
 
@@ -62,8 +64,20 @@ public class SellerGUI {
         startAuctionButton.setBounds(350, 260, 150, 25);
         frame.add(startAuctionButton);
 
+        JLabel bidAmountLabel = new JLabel("Your Bid:");
+        bidAmountLabel.setBounds(20, 300, 100, 25);
+        frame.add(bidAmountLabel);
+
+        bidAmountField = new JTextField();
+        bidAmountField.setBounds(120, 300, 200, 25);
+        frame.add(bidAmountField);
+
+        bidButton = new JButton("Place Bid");
+        bidButton.setBounds(350, 300, 150, 25);
+        frame.add(bidButton);
+
         logoutButton = new JButton("Logout");
-        logoutButton.setBounds(550, 260, 150, 25);
+        logoutButton.setBounds(550, 300, 150, 25);
         frame.add(logoutButton);
 
         addListeners();
@@ -101,7 +115,6 @@ public class SellerGUI {
                     return;
                 }
 
-                // Add item to the table with the seller's name and "Still Up for Bid" status
                 tableModel.addRow(new Object[]{itemName, startingBid, sellerName, "Still Up for Bid"});
                 itemNameField.setText("");
                 startingBidField.setText("");
@@ -124,14 +137,10 @@ public class SellerGUI {
                 AuctionSystem auctionSystem = new AuctionSystem(auctionItem, 60);
                 auctionSystemHolder.setAuctionSystem(auctionSystem);
 
-                // Start the auction
                 auctionSystem.startAuction();
                 JOptionPane.showMessageDialog(frame, "Auction for '" + itemName + "' has started.");
-
-                // Update the status of the selected item
                 tableModel.setValueAt("Still Up for Bid", selectedRow, 3);
 
-                // Start a timer to automatically update the status when the auction ends
                 new Thread(() -> {
                     try {
                         Thread.sleep(auctionSystem.getAuctionDuration() * 1000L);
@@ -144,6 +153,36 @@ public class SellerGUI {
                         }
                     });
                 }).start();
+            }
+        });
+
+        bidButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String bidText = bidAmountField.getText();
+                double bidAmount;
+
+                try {
+                    bidAmount = Double.parseDouble(bidText);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame, "Please enter a valid bid amount.");
+                    return;
+                }
+
+                AuctionSystem auctionSystem = auctionSystemHolder.getAuctionSystem();
+                if (auctionSystem == null || !auctionSystem.isAuctionRunning()) {
+                    JOptionPane.showMessageDialog(frame, "No active auction to bid on.");
+                    return;
+                }
+
+                boolean bidAccepted = auctionSystem.placeBid(bidAmount, sellerName);
+                if (bidAccepted) {
+                    JOptionPane.showMessageDialog(frame, "Bid placed successfully!");
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Bid too low. Try again.");
+                }
+
+                bidAmountField.setText("");
             }
         });
 
